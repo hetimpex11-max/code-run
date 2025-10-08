@@ -1,0 +1,92 @@
+ZZZ<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HET Pro2345 - Electronics Store</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+  <header>
+    <nav class="navbar">
+      <div class="nav-container">
+        <div class="nav-logo">
+          <a href="index.html">HET Pro2345</a>
+        </div>
+        <div class="nav-search">
+          <input type="text" id="search-input" placeholder="Search products...">
+          <button id="search-btn"><i class="fas fa-search"></i></button>
+        </div>
+        <div class="nav-links">
+          <a href="#" id="wishlist-link"><i class="fas fa-heart"></i> Wishlist</a>
+          <a href="cart.html" id="cart-link"><i class="fas fa-shopping-cart"></i> Cart (<span id="cart-count">0</span>)</a>
+          <div class="user-menu">
+            <button id="user-btn"><i class="fas fa-user"></i> Account</button>
+            <div class="user-dropdown" id="user-dropdown">
+              <a href="login.html" id="login-link">Login</a>
+              <a href="register.html" id="register-link">Register</a>
+              <a href="#" id="profile-link" style="display: none;">Profile</a>
+              <a href="#" id="orders-link" style="display: none;">Orders</a>
+              <a href="#" id="logout-btn" style="display: none;">Logout</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </nav>
+    <div class="nav-categories">
+      <div class="categories-container">
+        <a href="#" data-category="">All</a>
+        <div id="categories-list"></div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero-banners" id="hero-banners">
+      <!-- Banners will be loaded here -->
+    </section>
+
+    <section class="featured-products">
+      <div class="container">
+        <h2>Featured Products</h2>
+        <div class="products-grid" id="featured-products">
+          <!-- Products will be loaded here -->
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-section">
+          <h3>HET Pro2345</h3>
+          <p>Your trusted electronics store for all your tech needs.</p>
+        </div>
+        <div class="footer-section">
+          <h3>Quick Links</h3>
+          <ul>
+            <li><a href="products.html">Products</a></li>
+            <li><a href="about.html">About Us</a></li>
+            <li><a href="contact.html">Contact</a></li>
+          </ul>
+        </div>
+        <div class="footer-section">
+          <h3>Customer Service</h3>
+          <ul>
+            <li><a href="#">Help Center</a></li>
+            <li><a href="#">Shipping Info</a></li>
+            <li><a href="#">Returns</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2025 HET Pro2345. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
