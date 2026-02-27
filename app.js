@@ -1,247 +1,284 @@
-// API Base URL
-const API_BASE = 'http://localhost:5000/api';
+const STORAGE_KEY = 'het-impex-data-v1';
 
-// Global variables
-let currentUser = null;
-let cart = [];
+const state = {
+  diamondStock: [],
+  roughStock: [],
+  sales: [],
+  bills: []
+};
 
-// DOM Elements
-const searchInput = document.getElementById('search-input');
-const searchBtn = document.getElementById('search-btn');
-const cartCount = document.getElementById('cart-count');
-const userBtn = document.getElementById('user-btn');
-const userDropdown = document.getElementById('user-dropdown');
-const loginLink = document.getElementById('login-link');
-const registerLink = document.getElementById('register-link');
-const profileLink = document.getElementById('profile-link');
-const ordersLink = document.getElementById('orders-link');
-const logoutBtn = document.getElementById('logout-btn');
-const categoriesList = document.getElementById('categories-list');
-const heroBanners = document.getElementById('hero-banners');
-const featuredProducts = document.getElementById('featured-products');
-
-// Initialize app
-document.addEventListener('DOMContentLoaded', initApp);
-
-function initApp() {
-  checkAuthStatus();
-  loadCategories();
-  loadBanners();
-  loadFeaturedProducts();
-  setupEventListeners();
-}
-
-function setupEventListeners() {
-  // Search
-  searchBtn.addEventListener('click', handleSearch);
-  searchInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') handleSearch();
-  });
-
-  // User menu
-  userBtn.addEventListener('click', () => {
-    userDropdown.style.display = userDropdown.style.display === 'block' ? 'none' : 'block';
-  });
-
-  // Logout
-  logoutBtn.addEventListener('click', handleLogout);
-
-  // Categories
-  categoriesList.addEventListener('click', (e) => {
-    if (e.target.tagName === 'A') {
-      e.preventDefault();
-      const categoryId = e.target.dataset.category;
-      filterByCategory(categoryId);
-    }
-  });
-}
-
-// Authentication
-function checkAuthStatus() {
-  const token = localStorage.getItem('token');
-  if (token) {
-    currentUser = JSON.parse(localStorage.getItem('user'));
-    updateUIForLoggedInUser();
-  } else {
-    updateUIForLoggedOutUser();
+const refs = {
+  diamondForm: document.getElementById('diamond-form'),
+  roughForm: document.getElementById('rough-form'),
+  saleForm: document.getElementById('sale-form'),
+  billForm: document.getElementById('bill-form'),
+  diamondTable: document.getElementById('diamond-table'),
+  roughTable: document.getElementById('rough-table'),
+  saleTable: document.getElementById('sale-table'),
+  billPreview: document.getElementById('bill-preview'),
+  exportBtn: document.getElementById('export-data'),
+  totals: {
+    diamondNumber: document.getElementById('sum-diamond-number'),
+    diamondManufacturing: document.getElementById('sum-diamond-manufacturing'),
+    rough: document.getElementById('sum-rough'),
+    soldCts: document.getElementById('sum-sold-cts'),
+    salesAmount: document.getElementById('sum-sales-amount')
   }
+};
+
+document.addEventListener('DOMContentLoaded', init);
+
+function init() {
+  loadState();
+  bindEvents();
+  renderAll();
 }
 
-function updateUIForLoggedInUser() {
-  loginLink.style.display = 'none';
-  registerLink.style.display = 'none';
-  profileLink.style.display = 'block';
-  ordersLink.style.display = 'block';
-  logoutBtn.style.display = 'block';
-  userBtn.innerHTML = `<i class="fas fa-user"></i> ${currentUser.name}`;
-  loadCart();
+function bindEvents() {
+  refs.diamondForm.addEventListener('submit', onAddDiamond);
+  refs.roughForm.addEventListener('submit', onAddRough);
+  refs.saleForm.addEventListener('submit', onAddSale);
+  refs.billForm.addEventListener('submit', onGenerateBill);
+  refs.exportBtn.addEventListener('click', exportData);
+
+  refs.diamondTable.addEventListener('click', onDeleteRow('diamondStock'));
+  refs.roughTable.addEventListener('click', onDeleteRow('roughStock'));
+  refs.saleTable.addEventListener('click', onDeleteRow('sales'));
 }
 
-function updateUIForLoggedOutUser() {
-  loginLink.style.display = 'block';
-  registerLink.style.display = 'block';
-  profileLink.style.display = 'none';
-  ordersLink.style.display = 'none';
-  logoutBtn.style.display = 'none';
-  userBtn.innerHTML = '<i class="fas fa-user"></i> Account';
-  cart = [];
-  updateCartCount();
+function onAddDiamond(event) {
+  event.preventDefault();
+  const shape = document.getElementById('diamond-shape').value.trim();
+  const numberCts = parseFloat(document.getElementById('diamond-number-cts').value);
+  const manufacturingCts = parseFloat(document.getElementById('diamond-manufacturing-cts').value);
+
+  state.diamondStock.unshift({
+    id: crypto.randomUUID(),
+    date: now(),
+    shape,
+    numberCts,
+    manufacturingCts
+  });
+
+  saveAndRender();
+  refs.diamondForm.reset();
 }
 
-function handleLogout() {
-  localStorage.removeItem('token');
-  localStorage.removeItem('user');
-  currentUser = null;
-  updateUIForLoggedOutUser();
-  window.location.reload();
+function onAddRough(event) {
+  event.preventDefault();
+  const roughType = document.getElementById('rough-type').value.trim();
+  const stockCts = parseFloat(document.getElementById('rough-stock-cts').value);
+
+  state.roughStock.unshift({
+    id: crypto.randomUUID(),
+    date: now(),
+    roughType,
+    stockCts
+  });
+
+  saveAndRender();
+  refs.roughForm.reset();
 }
 
-// API Calls
-async function apiCall(endpoint, options = {}) {
-  const token = localStorage.getItem('token');
-  const defaultOptions = {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token && { Authorization: `Bearer ${token}` })
-    }
+function onAddSale(event) {
+  event.preventDefault();
+  const customer = document.getElementById('sale-customer').value.trim();
+  const item = document.getElementById('sale-item').value.trim();
+  const cts = parseFloat(document.getElementById('sale-cts').value);
+  const rate = parseFloat(document.getElementById('sale-rate').value);
+  const amount = cts * rate;
+
+  state.sales.unshift({
+    id: crypto.randomUUID(),
+    date: now(),
+    customer,
+    item,
+    cts,
+    rate,
+    amount
+  });
+
+  saveAndRender();
+  refs.saleForm.reset();
+}
+
+function onGenerateBill(event) {
+  event.preventDefault();
+
+  const customer = document.getElementById('bill-customer').value.trim();
+  const description = document.getElementById('bill-description').value.trim();
+  const cts = parseFloat(document.getElementById('bill-cts').value);
+  const rate = parseFloat(document.getElementById('bill-rate').value);
+  const amount = cts * rate;
+
+  const bill = {
+    id: crypto.randomUUID(),
+    billNo: `HET-${Date.now()}`,
+    date: now(),
+    company: 'HET IMPEX',
+    customer,
+    description,
+    cts,
+    rate,
+    amount
   };
 
-  try {
-    const response = await fetch(`${API_BASE}${endpoint}`, { ...defaultOptions, ...options });
-    const data = await response.json();
+  state.bills.unshift(bill);
+  saveState();
+  renderBill(bill);
+  refs.billForm.reset();
+}
 
-    if (!response.ok) {
-      throw new Error(data.message || 'API call failed');
+function onDeleteRow(section) {
+  return (event) => {
+    const btn = event.target.closest('button[data-id]');
+    if (!btn) {
+      return;
     }
 
-    return data;
-  } catch (error) {
-    console.error('API Error:', error);
-    alert(error.message);
-    throw error;
+    const id = btn.dataset.id;
+    state[section] = state[section].filter((item) => item.id !== id);
+    saveAndRender();
+  };
+}
+
+function renderAll() {
+  renderDiamondTable();
+  renderRoughTable();
+  renderSalesTable();
+  renderTotals();
+
+  if (state.bills.length > 0) {
+    renderBill(state.bills[0]);
   }
 }
 
-// Load categories
-async function loadCategories() {
-  try {
-    const data = await apiCall('/products/categories');
-    categoriesList.innerHTML = data.map(category =>
-      `<a href="#" data-category="${category._id}">${category.name}</a>`
-    ).join('');
-  } catch (error) {
-    console.error('Failed to load categories');
-  }
+function renderDiamondTable() {
+  refs.diamondTable.innerHTML = state.diamondStock
+    .map(
+      (entry) => `<tr>
+      <td>${entry.date}</td>
+      <td>${escapeHtml(entry.shape)}</td>
+      <td>${format(entry.numberCts)}</td>
+      <td>${format(entry.manufacturingCts)}</td>
+      <td><button class="btn danger" data-id="${entry.id}">Delete</button></td>
+    </tr>`
+    )
+    .join('');
 }
 
-// Load banners
-async function loadBanners() {
-  try {
-    const data = await apiCall('/products/banners/active');
-    heroBanners.innerHTML = data.map(banner =>
-      `<img src="${API_BASE.replace('/api', '')}/uploads/${banner.image}" alt="${banner.title}">`
-    ).join('');
-  } catch (error) {
-    console.error('Failed to load banners');
-  }
+function renderRoughTable() {
+  refs.roughTable.innerHTML = state.roughStock
+    .map(
+      (entry) => `<tr>
+      <td>${entry.date}</td>
+      <td>${escapeHtml(entry.roughType)}</td>
+      <td>${format(entry.stockCts)}</td>
+      <td><button class="btn danger" data-id="${entry.id}">Delete</button></td>
+    </tr>`
+    )
+    .join('');
 }
 
-// Load featured products
-async function loadFeaturedProducts() {
-  try {
-    const data = await apiCall('/products?limit=8');
-    featuredProducts.innerHTML = data.products.map(product => createProductCard(product)).join('');
-  } catch (error) {
-    console.error('Failed to load products');
-  }
+function renderSalesTable() {
+  refs.saleTable.innerHTML = state.sales
+    .map(
+      (entry) => `<tr>
+      <td>${entry.date}</td>
+      <td>${escapeHtml(entry.customer)}</td>
+      <td>${escapeHtml(entry.item)}</td>
+      <td>${format(entry.cts)}</td>
+      <td>${format(entry.amount)}</td>
+      <td><button class="btn danger" data-id="${entry.id}">Delete</button></td>
+    </tr>`
+    )
+    .join('');
 }
 
-// Create product card
-function createProductCard(product) {
-  const imageUrl = product.images && product.images.length > 0
-    ? `${API_BASE.replace('/api', '')}/uploads/${product.images[0]}`
-    : 'https://via.placeholder.com/250x200?text=No+Image';
-
-  return `
-    <div class="product-card">
-      <div class="product-image">
-        <img src="${imageUrl}" alt="${product.name}">
-      </div>
-      <div class="product-info">
-        <a href="product.html?id=${product._id}" class="product-name">${product.name}</a>
-        <div class="product-price">$${product.price}</div>
-        <div class="product-rating">
-          <div class="stars">${'★'.repeat(Math.floor(product.averageRating))}${'☆'.repeat(5 - Math.floor(product.averageRating))}</div>
-          <span>(${product.reviews ? product.reviews.length : 0})</span>
-        </div>
-        <div class="product-actions">
-          <button class="btn btn-primary" onclick="addToCart('${product._id}')">Add to Cart</button>
-          <button class="btn btn-secondary" onclick="addToWishlist('${product._id}')">
-            <i class="fas fa-heart"></i>
-          </button>
-        </div>
-      </div>
-    </div>
+function renderBill(bill) {
+  refs.billPreview.classList.remove('hidden');
+  refs.billPreview.innerHTML = `
+    <h3>${bill.company}</h3>
+    <h4>Bill / Invoice</h4>
+    <p><strong>Bill No:</strong> ${bill.billNo}</p>
+    <p><strong>Date:</strong> ${bill.date}</p>
+    <p><strong>Customer:</strong> ${escapeHtml(bill.customer)}</p>
+    <p><strong>Description:</strong> ${escapeHtml(bill.description)}</p>
+    <p><strong>CTS:</strong> ${format(bill.cts)}</p>
+    <p><strong>Rate:</strong> ${format(bill.rate)}</p>
+    <p><strong>Total Amount:</strong> ${format(bill.amount)}</p>
   `;
 }
 
-// Cart functions
-async function loadCart() {
-  if (!currentUser) return;
-  try {
-    cart = await apiCall('/user/cart');
-    updateCartCount();
-  } catch (error) {
-    console.error('Failed to load cart');
-  }
+function renderTotals() {
+  const diamondNumber = sum(state.diamondStock, 'numberCts');
+  const diamondManufacturing = sum(state.diamondStock, 'manufacturingCts');
+  const rough = sum(state.roughStock, 'stockCts');
+  const soldCts = sum(state.sales, 'cts');
+  const salesAmount = sum(state.sales, 'amount');
+
+  refs.totals.diamondNumber.textContent = format(diamondNumber);
+  refs.totals.diamondManufacturing.textContent = format(diamondManufacturing);
+  refs.totals.rough.textContent = format(rough);
+  refs.totals.soldCts.textContent = format(soldCts);
+  refs.totals.salesAmount.textContent = format(salesAmount);
 }
 
-function updateCartCount() {
-  const count = cart.reduce((sum, item) => sum + item.quantity, 0);
-  cartCount.textContent = count;
+function exportData() {
+  const file = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(file);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `het-impex-data-${Date.now()}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }
 
-async function addToCart(productId) {
-  if (!currentUser) {
-    alert('Please login to add items to cart');
+function loadState() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) {
     return;
   }
+
   try {
-    await apiCall('/user/cart', {
-      method: 'POST',
-      body: JSON.stringify({ productId, quantity: 1 })
-    });
-    loadCart();
-    alert('Added to cart!');
-  } catch (error) {
-    console.error('Failed to add to cart');
+    const parsed = JSON.parse(raw);
+    state.diamondStock = parsed.diamondStock || [];
+    state.roughStock = parsed.roughStock || [];
+    state.sales = parsed.sales || [];
+    state.bills = parsed.bills || [];
+  } catch {
+    localStorage.removeItem(STORAGE_KEY);
   }
 }
 
-async function addToWishlist(productId) {
-  if (!currentUser) {
-    alert('Please login to add to wishlist');
-    return;
-  }
-  try {
-    await apiCall('/user/wishlist', {
-      method: 'POST',
-      body: JSON.stringify({ productId })
-    });
-    alert('Added to wishlist!');
-  } catch (error) {
-    console.error('Failed to add to wishlist');
-  }
+function saveAndRender() {
+  saveState();
+  renderAll();
 }
 
-// Search and filter
-function handleSearch() {
-  const query = searchInput.value.trim();
-  if (query) {
-    window.location.href = `products.html?search=${encodeURIComponent(query)}`;
-  }
+function saveState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
 
-function filterByCategory(categoryId) {
-  window.location.href = `products.html?category=${categoryId}`;
+function now() {
+  return new Date().toLocaleString();
+}
+
+function format(value) {
+  return Number(value).toFixed(2);
+}
+
+function sum(arr, key) {
+  return arr.reduce((acc, entry) => acc + Number(entry[key] || 0), 0);
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
 }

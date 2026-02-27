@@ -1,92 +1,117 @@
-ZZZ<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>HET Pro2345 - Electronics Store</title>
-  <link rel="stylesheet" href="css/style.css">
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HET IMPEX | Diamond Business Manager</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <header>
-    <nav class="navbar">
-      <div class="nav-container">
-        <div class="nav-logo">
-          <a href="index.html">HET Pro2345</a>
-        </div>
-        <div class="nav-search">
-          <input type="text" id="search-input" placeholder="Search products...">
-          <button id="search-btn"><i class="fas fa-search"></i></button>
-        </div>
-        <div class="nav-links">
-          <a href="#" id="wishlist-link"><i class="fas fa-heart"></i> Wishlist</a>
-          <a href="cart.html" id="cart-link"><i class="fas fa-shopping-cart"></i> Cart (<span id="cart-count">0</span>)</a>
-          <div class="user-menu">
-            <button id="user-btn"><i class="fas fa-user"></i> Account</button>
-            <div class="user-dropdown" id="user-dropdown">
-              <a href="login.html" id="login-link">Login</a>
-              <a href="register.html" id="register-link">Register</a>
-              <a href="#" id="profile-link" style="display: none;">Profile</a>
-              <a href="#" id="orders-link" style="display: none;">Orders</a>
-              <a href="#" id="logout-btn" style="display: none;">Logout</a>
-            </div>
-          </div>
-        </div>
-      </div>
-    </nav>
-    <div class="nav-categories">
-      <div class="categories-container">
-        <a href="#" data-category="">All</a>
-        <div id="categories-list"></div>
-      </div>
+  <header class="app-header">
+    <div>
+      <h1>HET IMPEX</h1>
+      <p>Diamond Business Data Management</p>
     </div>
+    <button id="export-data" class="btn secondary">Export Data</button>
   </header>
 
-  <main>
-    <section class="hero-banners" id="hero-banners">
-      <!-- Banners will be loaded here -->
+  <main class="layout">
+    <section class="card">
+      <h2>Diamond Stock</h2>
+      <form id="diamond-form" class="grid-form">
+        <input type="text" id="diamond-shape" placeholder="Shape (Round, Oval...)" required />
+        <input type="number" id="diamond-number-cts" step="0.01" min="0" placeholder="Number CTS" required />
+        <input type="number" id="diamond-manufacturing-cts" step="0.01" min="0" placeholder="Manufacturing CTS" required />
+        <button type="submit" class="btn">Add Diamond Stock</button>
+      </form>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Shape</th>
+              <th>Number CTS</th>
+              <th>Manufacturing CTS</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="diamond-table"></tbody>
+        </table>
+      </div>
     </section>
 
-    <section class="featured-products">
-      <div class="container">
-        <h2>Featured Products</h2>
-        <div class="products-grid" id="featured-products">
-          <!-- Products will be loaded here -->
-        </div>
+    <section class="card">
+      <h2>Rough Diamond Stock</h2>
+      <form id="rough-form" class="grid-form">
+        <input type="text" id="rough-type" placeholder="Rough Type" required />
+        <input type="number" id="rough-stock-cts" step="0.01" min="0" placeholder="Stock CTS" required />
+        <button type="submit" class="btn">Add Rough Stock</button>
+      </form>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Rough Type</th>
+              <th>Stock CTS</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="rough-table"></tbody>
+        </table>
       </div>
+    </section>
+
+    <section class="card">
+      <h2>Sales Entry</h2>
+      <form id="sale-form" class="grid-form">
+        <input type="text" id="sale-customer" placeholder="Customer Name" required />
+        <input type="text" id="sale-item" placeholder="Sold Item" required />
+        <input type="number" id="sale-cts" step="0.01" min="0" placeholder="Sold CTS" required />
+        <input type="number" id="sale-rate" step="0.01" min="0" placeholder="Rate per CTS" required />
+        <button type="submit" class="btn">Add Sale</button>
+      </form>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Customer</th>
+              <th>Item</th>
+              <th>CTS</th>
+              <th>Amount</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="sale-table"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Bill Generator</h2>
+      <form id="bill-form" class="grid-form">
+        <input type="text" id="bill-customer" placeholder="Customer Name" required />
+        <input type="text" id="bill-description" placeholder="Description" required />
+        <input type="number" id="bill-cts" step="0.01" min="0" placeholder="CTS" required />
+        <input type="number" id="bill-rate" step="0.01" min="0" placeholder="Rate per CTS" required />
+        <button type="submit" class="btn">Generate Bill</button>
+      </form>
+      <article id="bill-preview" class="invoice hidden"></article>
+    </section>
+
+    <section class="card totals">
+      <h2>Business Summary</h2>
+      <ul>
+        <li>Total Diamond Number CTS: <strong id="sum-diamond-number">0.00</strong></li>
+        <li>Total Diamond Manufacturing CTS: <strong id="sum-diamond-manufacturing">0.00</strong></li>
+        <li>Total Rough Stock CTS: <strong id="sum-rough">0.00</strong></li>
+        <li>Total Sold CTS: <strong id="sum-sold-cts">0.00</strong></li>
+        <li>Total Sales Amount: <strong id="sum-sales-amount">0.00</strong></li>
+      </ul>
     </section>
   </main>
 
-  <footer>
-    <div class="container">
-      <div class="footer-content">
-        <div class="footer-section">
-          <h3>HET Pro2345</h3>
-          <p>Your trusted electronics store for all your tech needs.</p>
-        </div>
-        <div class="footer-section">
-          <h3>Quick Links</h3>
-          <ul>
-            <li><a href="products.html">Products</a></li>
-            <li><a href="about.html">About Us</a></li>
-            <li><a href="contact.html">Contact</a></li>
-          </ul>
-        </div>
-        <div class="footer-section">
-          <h3>Customer Service</h3>
-          <ul>
-            <li><a href="#">Help Center</a></li>
-            <li><a href="#">Shipping Info</a></li>
-            <li><a href="#">Returns</a></li>
-          </ul>
-        </div>
-      </div>
-      <div class="footer-bottom">
-        <p>&copy; 2025 HET Pro2345. All rights reserved.</p>
-      </div>
-    </div>
-  </footer>
-
-  <script src="js/app.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
